@@ -1,0 +1,304 @@
+*******************************************************************************
+
+* LAB #2
+* - Balisacan, Lucas Matthew
+* - Sulay, Lucia Danielle
+* - Tulio, Eimer Justin
+
+*******************************************************************************
+
+.include "8clocks.jsim"
+.include "nominal.jsim"
+.include "stdcell.jsim"
+
+*******************************************************************************
+*
+* ============================ OUT = ABC + DE + FG ============================
+*
+*******************************************************************************
+
+* Next we define the subcircuits fx1 and fx.
+
+* subckt fx1
+
+* We started by implementing the original circuit with its original gates.
+* Since the given function is OUT = ABC + DE + FG,
+* we used 1 3-input AND gate, 2 2-input AND gates, and 1 3-input OR gate.
+
+
+* subckt fx
+
+* Afterwards, we applied De Morgan's Law to build the circuit
+* using only NAND, NOR, or NOR gates.
+* We started by applying De Morgan's Law to the function.
+* This gave !(ABC)!(DE)!(FG),
+* which means using 2 2-input NANDs and 1 3-input NAND.
+* Note that since we used De Morgan's, the original function is the NOT of it,
+* so OUT = !(!(ABC)!(DE)!(FG)).
+* This means we also have to use 1 more 3-input NAND.
+* This is the fewest possible number of gates
+* since there is no redundancy to eliminate:
+* 3 AND terms must be computed (ABC, DE, and FG),
+* and they must be combined through gate logic to produce OUT.
+* Hence, 4 gates is the minimum needed to implement the function.
+
+*******************************************************************************
+
+.subckt fx1 a b c d e f g output
+    Xsub1 a b c x and3
+    Xsub2 d e y and2
+    Xsub3 f g z and2
+    Xfinal x y z output or3
+.ends
+
+
+.subckt fx a b c d e f g output
+    Xsub1 a b c x nand3
+    Xsub2 d e y nand2
+    Xsub3 f g z nand2
+    Xfinal x y z output nand3
+.ends
+
+*******************************************************************************
+
+* Next we instantiate the subcircuits fx1 and fx.
+
+* clk1 to clk7 is assigned to each input of fx1 and fx.
+* The single output of the subcircuit fx1 is OUT1.
+* The single output of the subcircuit fx is OUT.
+
+*******************************************************************************
+
+Xfirst clk1 clk2 clk3 clk4 clk5 clk6 clk7 OUT1 fx1
+Xsecond clk1 clk2 clk3 clk4 clk5 clk6 clk7 OUT fx
+
+*******************************************************************************
+*
+* ============================ FULL-ADDER CIRCUIT ============================
+*
+*******************************************************************************
+
+* Next we define the subcircuits fa1, fa2, fa3, fa4, and fa5.
+
+* subckt fa1
+
+* We started by implementing the original circuit with its original gates.
+* Since the given function is a full-adder,
+* we used 2 2-input XOR gates, 2 2-input AND gates, and 1 2-input OR gate.
+
+
+* subckt fa2
+
+* In subckt fa1, we needed 2 XOR gates, 2 AND gates, and 1 OR gate.
+* However, we may only use NAND, NOR, NOT, or XOR gates.
+* To make an AND gate, we can use 2 NAND gates.
+* To make an OR gate, we can use 3 NAND gates.
+* Thus results in a subckt with 2 XOR gates and 7 NAND gates.
+
+
+* subckt fa3
+
+* Using De Morgan's Law,
+* we also realized we could express the 2 AND gates and 1 OR gate
+* in terms of 3 NAND gates.
+* This would result in using only 5 gates:
+* 2 XOR gates and 3 NAND gates.
+
+
+* subckt fa4
+
+* Following subckt fa3, we realized it might be interesting to compare
+* the efficiencies of the subckts if we expressed the XOR gates
+* in terms of NAND gates.
+* Since each XOR gate can be expressed in terms of 4 NAND gates,
+* 2 XOR gates = 2 x 4 NAND gates = 8 NAND gates.
+* Adding this to the 3 NAND gates from subckt fa3
+* which we used to replace the 2 AND gates and 1 OR gate,
+* 8 NAND gates (from 2 XOR gates) + 3 NAND gates (from 2 AND gates and 1 OR gate)
+* = 11 NAND gates.
+
+
+* subckt fa5
+
+* Following subckt fa4, we realized we could simplify the 11 NAND gates further
+* into 9 NAND gates.
+* To do this, we reused the outputs of Xor1_nand1 and Xor2_nand5
+* instead of creating duplicate gates (Xnand1 and Xnand2) for Cout specifically.
+
+*******************************************************************************
+
+.subckt fa1 A B Cin Sum Cout
+	Xxor1 A B XOR_1 xor2
+	Xxor2 XOR_1 Cin Sum xor2
+	Xand1 A B AND_1 and2
+	Xand2 XOR_1 Cin AND_2 and2
+	Xor1 AND_1 AND_2 Cout or2
+.ends
+
+
+.subckt fa2 A B Cin Sum Cout
+	Xxor1 A B XOR_1 xor2
+	Xxor2 XOR_1 Cin Sum xor2
+	Xnand1 A B NOT_AB nand2
+	Xand1 NOT_AB NOT_AB AB nand2
+	Xnand2 Cin XOR_1 NOT_CinAB nand2
+	Xand2 NOT_CinAB NOT_CinAB CinAB nand2
+	Xnand3_1 AB AB AB_INV nand2
+	Xnand3_2 CinAB CinAB CinAB_INV nand2
+	Xor3 AB_INV CinAB_INV Cout nand2
+.ends
+
+
+.subckt fa3 A B Cin Sum Cout
+	Xxor1 A B XOR_1 xor2
+	Xxor2 XOR_1 Cin Sum xor2
+	Xnand1 A B NAND_1 nand2
+	Xnand2 XOR_1 Cin NAND_2 nand2
+	Xnand3 NAND_1 NAND_2 Cout nand2
+.ends
+
+
+.subckt fa4 A B Cin Sum Cout
+	Xor1_nand1 A B NOT_AB nand2
+	Xor1_nand2 A NOT_AB out_1 nand2
+	Xor1_nand3 B NOT_AB out_2 nand2
+	Xor1_nand4 out_1 out_2 XOR_1 nand2
+
+	Xor2_nand5 XOR_1 Cin NOT_XOR_1Cin nand2
+	Xor2_nand6 XOR_1 NOT_XOR_1Cin out_3 nand2
+	Xor2_nand7 Cin NOT_XOR_1Cin out_4 nand2
+	Xor2_nand8 out_3 out_4 Sum nand2
+
+	Xnand1 A B NAND_1 nand2
+	Xnand2 XOR_1 Cin NAND_2 nand2
+	Xnand3 NAND_1 NAND_2 Cout nand2
+.ends
+
+
+.subckt fa5 A B Cin Sum Cout
+	Xor1_nand1 A B NOT_AB nand2
+	Xor1_nand2 A NOT_AB out_1 nand2
+	Xor1_nand3 B NOT_AB out_2 nand2
+	Xor1_nand4 out_1 out_2 XOR_1 nand2
+
+	Xor2_nand5 XOR_1 Cin NOT_XOR_1Cin nand2
+	Xor2_nand6 XOR_1 NOT_XOR_1Cin out_3 nand2
+	Xor2_nand7 Cin NOT_XOR_1Cin out_4 nand2
+	Xor2_nand8 out_3 out_4 Sum nand2
+
+	Xnand3 NOT_AB NOT_XOR_1Cin Cout nand2
+.ends
+
+*******************************************************************************
+
+* Next we instantiate the subcircuits fa1, fa2, fa3, fa4, and fa5.
+
+* clk5 to clk7 is assigned to each input of fa.
+* Each fa subckt has 2 outputs: Sum and Cout (carry out).
+
+*******************************************************************************
+
+Xfa1 clk5 clk6 clk7 Sum1 Cout1 fa1
+Xfa2 clk5 clk6 clk7 Sum2 Cout2 fa2
+Xfa3 clk5 clk6 clk7 Sum3 Cout3 fa3
+Xfa4 clk5 clk6 clk7 Sum4 Cout4 fa4
+Xfa5 clk5 clk6 clk7 Sum5 Cout5 fa5
+
+*******************************************************************************
+
+* Next we plot clk1 through clk7,
+* the single output of fx1 (OUT1),
+* the single output of fx (OUT),
+* as well as each of the two outputs (Sum and Cout) of each of the 5 fa subckts.
+
+* Since we need to show at least one full cycle of clk7,
+* we will need to observe the input and output nodes
+* for a period of at least 700 ns,
+* which is a little over one complete clk7 cycle.
+
+*******************************************************************************
+
+.tran 700ns
+.plot clk1
+.plot clk2
+.plot clk3
+.plot clk4
+.plot clk5
+.plot clk6
+.plot clk7
+
+.plot OUT1
+.plot OUT
+
+.plot Sum1
+.plot Sum2
+.plot Sum3
+.plot Sum4
+.plot Sum5
+.plot Cout1
+.plot Cout2
+.plot Cout3
+.plot Cout4
+.plot Cout5
+
+*******************************************************************************
+*******************************************************************************
+*
+*
+* ============================ OUT = ABC + DE + FG ============================
+*
+*
+*******************************************************************************
+*******************************************************************************
+
+* We noticed that without even having to zoom in,
+* the edges of OUT1 are more "bolded" than the edges of OUT.
+* This shows that they are thicker, and if you zoom in,
+* you will see that the thickness is due to more transition delay.
+
+* Hence, fx1 is a less effective implementation of the function.
+* Because the output (OUT) of fx has thinner edges,
+* this means it has less transition delay,
+* and thus indicates that it is a more efficient circuit.
+* This is also expected since NANDs are conventionally known to be faster
+* than AND and OR gates.
+
+*******************************************************************************
+*******************************************************************************
+*
+*
+* ============================ FULL-ADDER CIRCUIT ============================
+*
+*
+*******************************************************************************
+*******************************************************************************
+
+* We noticed that for the output Sum,
+* fa4 and fa5 had the thinnest edges
+* and therefore the least transition delays.
+
+* For the output Cout,
+* fa3 and fa4 had the thinnest edges
+* and therefore the least transition delays.
+
+* We are thus presented with two dilemmas:
+* (1) Which output should be prioritized?
+* (2) Which is more important, size (i.e. number of gates), or efficiency?
+
+* For the first dilemma, the group ultimately decided that Cout must take priority,
+* since the Cout output will be used as input to another adder.
+* Hence, a delay from Cout will hinder the efficiency of the entire succession of adders.
+* This placed priority on fa3 and fa4.
+
+* For the second dilemma, the group decided that increasing size was worth
+* increasing efficiency.
+* In other words, even though fa4 had 2 more NAND gates than fa5,
+* it provides a much faster Cout,
+* which is more important in multi-bit adder performance.
+
+* Lastly, fa3 had a substantially higher delay in output Sum
+* compared to fa4.
+* Even if the group chose to prioritize Cout,
+* this was still a big factor in the decision.
+
+* Thus, fa4 is the most efficient circuit.

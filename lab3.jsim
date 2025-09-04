@@ -1,0 +1,55 @@
+*******************************************************************************
+* All lines that begin with * are comments. You may safely remove them for your
+* own submissions, but as with any programming exercise, please put in your own
+* comments to explain your code!
+*
+* In your own submissions, make sure to replace this comment block with your
+* names, in the following format:
+*
+* LAB #3
+* - Balisacan, Lucas Matthew 
+* - Sulay, Lucia Danielle
+* - Tulio, Eimer Justin
+*
+* Make sure your names are in alphabetical order, Last Name before First Name.
+* You will get deductions if you don't strictly follow this format.
+*******************************************************************************
+
+
+*******************************************************************************
+* The following .include lines are necessary for all your CSCI 50.02 JSim
+* exercises. These work like your Java import statement.
+*******************************************************************************
+
+.include "8clocks.jsim"
+.include "nominal.jsim"
+.include "stdcell.jsim"
+
+
+Xinv clk1 out inverter
+
+.subckt fa A B Cin Sum Cout
+    *whichever full adder we're using
+.ends
+
+.subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30] outputs
+    *your code here
+.ends
+
+*instantiation
+Xsum a[31:0] b[31:0] 0 sum[31:0] c31 c30 add32
+
+
+*not sure if this is correct
+*create digital waveforms for testing
+Wa a[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
++ 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
+
+Wb b[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
++ 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
+
+.plot Wa
+.plot Wb
+.plot sum[31:0]
+
+
