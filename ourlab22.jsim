@@ -1,0 +1,84 @@
+*******************************************************************************
+*
+*
+* LAB #2
+* - Balisacan, Matthew
+* - Sulay, Lucia Danielle
+* - Tulio, Eimer Justin
+*
+*
+*******************************************************************************
+
+
+.include "8clocks.jsim"
+.include "nominal.jsim"
+.include "stdcell.jsim"
+
+
+*******************************************************************************
+*
+*
+* Next we define the subcircuit fx.
+*
+* We weren't sure where to begin, so we started by applying De Morgan's Law.
+* This gave !(ABC)!(DE)!(FG),
+* which means using 2 2-input NANDs and 1 3-input NAND.
+* Note that since we used De Morgan's, the original function is the NOT of it,
+* so OUT = !(!(ABC)!(DE)!(FG)).
+* This means we also have to use 1 more 3-input NAND.
+* justify why this is the lowest
+*
+*
+*******************************************************************************
+
+
+.subckt fx a b c d e f g output
+    Xsub1 a b c x nand3
+    Xsub2 d e y nand2
+    Xsub3 f g z nand2
+    Xfinal x y z output nand3
+.ends
+
+
+*******************************************************************************
+*
+*
+* Next we instantiate the subcircuit fx.
+*
+* clk1 to clk7 is assigned to each input of fx.
+* The single output of the subcircuit fx is OUT.
+*
+*
+*******************************************************************************
+
+
+Xmine clk1 clk2 clk3 clk4 clk5 clk6 clk7 OUT fx
+
+
+*******************************************************************************
+*
+*
+* Next we plot clk1 through clk7,
+* as well as the single output of fx (OUT).
+*
+* Since we need to show at least one full cycle of clk7,
+* we will need to observe the input and output nodes
+* for a period of at least 700 ns,
+* which is a little over one complete clk7 cycle.
+*
+*
+*******************************************************************************
+
+
+.tran 700ns
+.plot clk1
+.plot clk2
+.plot clk3
+.plot clk4
+.plot clk5
+.plot clk6
+.plot clk7
+.plot OUT
+
+
+*******************************************************************************

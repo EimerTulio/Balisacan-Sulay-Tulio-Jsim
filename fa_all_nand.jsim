@@ -1,0 +1,126 @@
+.include "8clocks.jsim"
+.include "nominal.jsim"
+.include "stdcell.jsim"
+
+* ========= Full Adder =========
+* The equations for a Full Adder are:
+*	SUM = A ? B ? Cin
+*	CARRY = (A�B) + (Cin�(A?B)) 
+*
+* To make a Full Adder circuit, we need 2 XOR gates, 2 AND gates, and 1 OR gate
+* However, we may only use NAND, NOR, NOT, or XOR gats
+* To make an AND gate, we use 2 NAND gates
+* To make an OR gate, we use 3 NAND gates
+* Thus, the fewest amount of gates we can use are: 2 XORs and 7 NANDs
+* ==============================
+
+.subckt fa A B Cin Sum Cout
+
+	* SUM = A ? B ? Cin
+*	Xxor1 A B XOR_1 xor2
+*	Xxor2 XOR_1 Cin Sum xor2
+	Xnandx1 A B NAND_X_1 nand2
+	Xnandx2 A NAND_X_1 NAND_X_2 nand2
+	Xnandx3 B NAND_X_1 NAND_X_3 nand2
+	Xnandx4 NAND_X_2 NAND_X_3 XOR_1 nand2
+
+	Xnandx5 XOR_1 Cin NAND_X_5 nand2
+	Xnandx6 XOR_1 NAND_X_5 NAND_X_6 nand2
+	Xnandx7 Cin NAND_X_5 NAND_X_7 nand2
+	Xnandx8 NAND_X_6 NAND_X_7 Sum nand2
+
+	* CARRY = (A*B) + (Cin(A?B)) 
+	
+	*** (A*B)
+*	Xnand1 A B NOT_AB nand2
+*	Xand1 NOT_AB NOT_AB AB nand2
+	
+	*** (Cin(A?B))
+*	Xnand2 Cin XOR_1 NOT_CinAB nand2
+*	Xand2 NOT_CinAB NOT_CinAB CinAB nand2
+	
+	*** (A*B) + (Cin(A?B))
+*	Xnand3_1 AB AB AB_INV nand2
+*	Xnand3_2 CinAB CinAB CinAB_INV nand2
+*	Xor3 AB_INV CinAB_INV Cout nand2
+
+*	Xnand1 NAND_X_1 NAND_X_5 Cout nand2
+* 9 NAND gates: (180 sum, 116 cout)
+	Xnand1 A B AB nand2
+	Xnand2 XOR_1 Cin XorCin nand2
+	Xnand3 AB XorCin Cout nand2
+* 11 NAND gates: (190 sum, 80 cout) 
+* 5 NAND gates: (306 sum, 80 cout) 
+* 2 XOR 7 NAND: (306 sum, 198 cout)
+* Basic: (302 sum, 274 cout)
+.ends fa
+
+* Instantiate the full adder with inputs from clk5, clk6, clk7
+* and outputs Sum, Cout
+
+Xfa clk5 clk6 clk7 Sum Cout fa
+
+.tran 1000ns
+.plot clk5
+.plot clk6
+.plot clk7
+.plot Sum
+.plot Cout
+
+* Basic: (302 sum, 274 cout)
+.subckt fa1 A B Cin Sum Cout
+	Xxor1 A B XOR_1 xor2
+	Xxor2 XOR_1 Cin Sum xor2
+	Xand1 A B AND_1 and2
+	Xand2 XOR_1 Cin AND_2 and2
+	Xor1 AND_1 AND_2 Cout or2
+.ends
+
+* 2 XOR 7 NAND: (306 sum, 198 cout)
+.subckt fa2 A B Cin Sum Cout
+	* fill in here
+.ends
+
+* 2 XOR 3 NAND gates: (306 sum, 80 cout)
+.subckt fa3 A B Cin Sum Cout
+	Xxor1 A B XOR_1 xor2
+	Xxor2 XOR_1 Cin Sum xor2
+	Xnand1 A B NAND_1 nand2
+	Xnand2 XOR_1 Cin NAND_2 nand2
+	Xnand3 NAND_1 NAND_2 Cout nand2
+.ends
+
+* 11 NAND gates: (190 sum, 80 cout)
+.subckt fa4 A B Cin Sum Cout
+	Xor1_nand1 A B !AB nand2
+	Xor1_nand2 A !AB out_1 nand2
+	Xor1_nand3 B !AB out_2 nand2
+	Xor1_nand4 out_1 out_2 XOR_1 nand2
+
+	Xor2_nand5 XOR_1 Cin !XOR_1Cin nand2
+	Xor2_nand6 XOR_1 !XOR_1Cin out_3 nand2
+	Xor2_nand7 Cin !XOR_1Cin out_4 nand2
+	Xor2_nand8 out_3 out_4 Sum nand2
+
+	Xnand1 A B NAND_1 nand2
+	Xnand2 XOR_1 Cin NAND_2 nand2
+	Xnand3 NAND_1 NAND_2 Cout nand2
+.ends
+
+* 9 NAND gates: (180 sum, 116 cout)
+.subckt fa5 A B Cin Sum Cout
+	
+	Xor1_nand1 A B !AB nand2
+	Xor1_nand2 A !AB out_1 nand2
+	Xor1_nand3 B !AB out_2 nand2
+	Xor1_nand4 out_1 out_2 XOR_1 nand2
+
+	Xor2_nand5 XOR_1 Cin !XOR_1Cin nand2
+	Xor2_nand6 XOR_1 !XOR_1Cin out_3 nand2
+	Xor2_nand7 Cin !XOR_1Cin out_4 nand2
+	Xor2_nand8 out_3 out_4 Sum nand2
+
+	* NAND Gates were reduced to 9 by reusing the outputs of Xor1_nand1 and Xor2_nand5
+	* instead of creating duplicate gates (Xnand1 and Xnand2) for Cout
+	Xnand3 !AB XOR_1Cin Cout nand2
+.ends
