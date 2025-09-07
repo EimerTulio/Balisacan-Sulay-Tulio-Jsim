@@ -37,23 +37,29 @@ Xinv clk1 out inverter
 .ends
 
 .subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
-    *first cin is cout0
-    Xadd a[31:0] b[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
+    *inverts the second number for subtraction 
+	*by taking its two's complement 
+	*(the add 1 is done by setting cin0 to 1)
+	*i don't think this is required for this lab
+	Xsub b[31:0] cin0#32 b_in[31:0] xor2
+
+	*the adders
+    Xadd a[31:0] b_in[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
 .ends
 
 *instantiation
-Xsum a[31:0] b[31:0] 0 sum[31:0] c31 c30 add32
+Xsum a[31:0] b[31:0] subtract sum[31:0] c31 c30 add32
 
+*change to constant1 if subtracting
+Xcin subtract constant0
 
 *not sure if this is correct
 *create digital waveforms for testing
 Wa a[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
-+ 0x11111111
-*+ 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
++ 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
 
 Wb b[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
-+ 0x12345678
-*+ 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
++ 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
 
 .tran 11200ns
 .plot a[31:0]
