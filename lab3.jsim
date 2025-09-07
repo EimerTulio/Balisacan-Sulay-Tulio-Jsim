@@ -29,11 +29,16 @@
 Xinv clk1 out inverter
 
 .subckt fa A B Cin Sum Cout
-    *whichever full adder we're using
+    Xxor1 A B XOR_1 xor2
+	Xxor2 XOR_1 Cin Sum xor2
+	Xnand1 A B NAND_1 nand2
+	Xnand2 XOR_1 Cin NAND_2 nand2
+	Xnand3 NAND_1 NAND_2 Cout nand2
 .ends
 
-.subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30] outputs
-    *your code here
+.subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
+    *first cin is cout0
+    Xadd a[31:0] b[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
 .ends
 
 *instantiation
@@ -43,13 +48,16 @@ Xsum a[31:0] b[31:0] 0 sum[31:0] c31 c30 add32
 *not sure if this is correct
 *create digital waveforms for testing
 Wa a[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
-+ 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
++ 0x11111111
+*+ 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
 
 Wb b[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
-+ 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
++ 0x12345678
+*+ 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
 
-.plot Wa
-.plot Wb
+.tran 11200ns
+.plot a[31:0]
+.plot b[31:0]
 .plot sum[31:0]
 
 
