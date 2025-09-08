@@ -32,7 +32,24 @@
 
 * Afterwards, we define the 32-bit adder based on fa.
 
-* For the first line within the .subckt,
+* We chain the full adders by making sure that
+* the carry out of an adder is the carry in of the next adder.
+* The carry in of the adder for the least significant digit is cin0.
+
+.subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
+    Xadd[31:0] a[31:0] b[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
+.ends
+
+*******************************************************************************
+
+* NOTE: ADDING A SUBTRACTION FUNCTION
+
+* If we intend to make the full adder a subtractor as well,
+* we add this line into the .subckt:
+* Xsub[31:0] b[31:0] cin0#32 b_in[31:0] xor2
+* and change the input of the adder from b[31:0] to b_in[31:0]
+* to add the subtraction function.
+
 * cin0 indicates if the second number will be subtracted (0 to add, 1 to subtract).
 * If subtracted, the digits of the second number are inverted.
 * The function of inverting a digit if the second digit is on
@@ -41,28 +58,15 @@
 * Inverting the digits and adding 1 
 * turns the second number into its two's complement.
 
-* For the second line within the .subckt,
-* we chain the full adders by making sure that
-* the carry out of an adder is the carry in of the next adder.
-* The carry in of the adder for the least significant digit is cin0.
-
-.subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
-	Xsub[31:0] b[31:0] cin0#32 b_in[31:0] xor2
-    Xadd[31:0] a[31:0] b_in[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
-.ends
-
 *******************************************************************************
 
 * Next, we instantiate the 32-bit adder.
-
-Xsum a[31:0] b[31:0] subtract sum[31:0] c31 c30 add32
-
-*******************************************************************************
 
 * Since we are using it as an adder and not a subtractor,
 * we use constant0.
 * constant1 should be used if subtracting.
 
+Xsum a[31:0] b[31:0] subtract sum[31:0] c31 c30 add32
 Xcin subtract constant0
 
 *******************************************************************************
