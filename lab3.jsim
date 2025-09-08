@@ -62,12 +62,7 @@
 
 * Next, we instantiate the 32-bit adder.
 
-* Since we are using it as an adder and not a subtractor,
-* we use constant0.
-* constant1 should be used if subtracting.
-
-Xsum a[31:0] b[31:0] subtract sum[31:0] c31 c30 add32
-Xcin subtract constant0
+Xsum a[31:0] b[31:0] 0 sum[31:0] c31 c30 add32
 
 *******************************************************************************
 
