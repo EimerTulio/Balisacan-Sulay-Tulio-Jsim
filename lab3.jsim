@@ -42,24 +42,6 @@
 
 *******************************************************************************
 
-* NOTE: ADDING A SUBTRACTION FUNCTION
-
-* If we intend to make the full adder a subtractor as well,
-* we add this line into the .subckt:
-* Xsub[31:0] b[31:0] cin0#32 b_in[31:0] xor2
-* and change the input of the adder from b[31:0] to b_in[31:0]
-* to add the subtraction function.
-
-* cin0 indicates if the second number will be subtracted (0 to add, 1 to subtract).
-* If subtracted, the digits of the second number are inverted.
-* The function of inverting a digit if the second digit is on
-* is equivalent to an XOR gate.
-* Then, cin0 becomes the add 1 for the least significant digit.
-* Inverting the digits and adding 1 
-* turns the second number into its two's complement.
-
-*******************************************************************************
-
 * Next, we instantiate the 32-bit adder.
 
 Xsum a[31:0] b[31:0] 0 sum[31:0] c31 c30 add32
