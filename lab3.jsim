@@ -1,33 +1,26 @@
 *******************************************************************************
-* All lines that begin with * are comments. You may safely remove them for your
-* own submissions, but as with any programming exercise, please put in your own
-* comments to explain your code!
-*
-* In your own submissions, make sure to replace this comment block with your
-* names, in the following format:
-*
+
 * LAB #3
 * - Balisacan, Lucas Matthew 
 * - Sulay, Lucia Danielle
 * - Tulio, Eimer Justin
-*
-* Make sure your names are in alphabetical order, Last Name before First Name.
-* You will get deductions if you don't strictly follow this format.
-*******************************************************************************
 
-
-*******************************************************************************
-* The following .include lines are necessary for all your CSCI 50.02 JSim
-* exercises. These work like your Java import statement.
 *******************************************************************************
 
 .include "8clocks.jsim"
 .include "nominal.jsim"
 .include "stdcell.jsim"
 
+*******************************************************************************
+
+* First, we copy pasted the .subckt we made for "fa" from Lab 2.
+* In Lab 2, we chose another circuit (11 NAND gates) as the most efficient.
+* However, after submission, we realized that the circuit below is more efficient,
+* especially in terms of size.
+
+* The .subckt fa uses 2 XOR gates and 3 NAND gates.
 
 .subckt fa A B Cin Sum Cout
-	* 2 XOR 3 NAND gates: (306 sum, 80 cout)
     Xxor1 A B XOR_1 xor2
 	Xxor2 XOR_1 Cin Sum xor2
 	Xnand1 A B NAND_1 nand2
@@ -35,38 +28,60 @@
 	Xnand3 NAND_1 NAND_2 Cout nand2
 .ends
 
+*******************************************************************************
+
+* Afterwards, we define the 32-bit adder based on fa.
+
+* For the first line within the .subckt,
+* cin0 indicates if the second number will be subtracted (0 to add, 1 to subtract).
+* If subtracted, the digits of the second number are inverted.
+* The function of inverting a digit if the second digit is on
+* is equivalent to an XOR gate.
+* Then, cin0 becomes the add 1 for the least significant digit.
+* Inverting the digits and adding 1 
+* turns the second number into its two's complement.
+
+* For the second line within the .subckt,
+* we chain the full adders by making sure that
+* the carry out of an adder is the carry in of the next adder.
+* The carry in of the adder for the least significant digit is cin0.
+
 .subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
-	**ADDING A SUBTRACTION FUNCTION**
-    *cin0 indicates if the second number will be subtracted (0 to add, 1 to subtract)
-	*if subtracted, inverts the digits of the second number
-	*the function of inverting a digit if the second digit is on
-	*is equivalent to an xor gate
-	*then cin0 becomes the add 1 for the least significant digit
-	*inverting the digits and adding 1 
-	*turns the second number to its 2's complement
-
-	*the input of the adder would need to be changed from b[31:0] to b_in[31:0]
-	*to add the subtraction function
-	*Xsub[31:0] b[31:0] cin0#32 b_in[31:0] xor2
-
-	*chaining the full adders
-	*the carry out of an adder is the carry in of the next adder
-	*the carry in of the adder for the least significant digit is cin0
-    Xadd[31:0] a[31:0] b[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
+	Xsub[31:0] b[31:0] cin0#32 b_in[31:0] xor2
+    Xadd[31:0] a[31:0] b_in[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
 .ends
 
-*instantiation
+*******************************************************************************
+
+* Next, we instantiate the 32-bit adder.
+
 Xsum a[31:0] b[31:0] subtract sum[31:0] c31 c30 add32
 
-*change to constant1 if subtracting
+*******************************************************************************
+
+* Since we are using it as an adder and not a subtractor,
+* we use constant0.
+* constant1 should be used if subtracting.
+
 Xcin subtract constant0
 
-*create digital waveforms for testing
+*******************************************************************************
+
+* Next, we create digital waveforms for the test cases.
+
 Wa a[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
-+ 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
++ 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF
++ 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
 
 Wb b[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
-+ 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
++ 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF
++ 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
+
+*******************************************************************************
+
+* Lastly, we plot the test cases, their sums, and their last two carry out bits.
+* Since the period is 20ns, and we have 10 test cases,
+* we adjusted the .tran period to 20ns x 10 = 200ns.
 
 .tran 200ns
 .plot a[31:0]
@@ -74,4 +89,3 @@ Wb b[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
 .plot sum[31:0]
 .plot c31
 .plot c30
-
