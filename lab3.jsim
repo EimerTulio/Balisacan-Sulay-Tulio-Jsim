@@ -26,9 +26,8 @@
 .include "stdcell.jsim"
 
 
-Xinv clk1 out inverter
-
 .subckt fa A B Cin Sum Cout
+	* 2 XOR 3 NAND gates: (306 sum, 80 cout)
     Xxor1 A B XOR_1 xor2
 	Xxor2 XOR_1 Cin Sum xor2
 	Xnand1 A B NAND_1 nand2
@@ -37,14 +36,19 @@ Xinv clk1 out inverter
 .ends
 
 .subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
-    *inverts the second number for subtraction 
-	*by taking its two's complement 
-	*(the add 1 is done by setting cin0 to 1)
-	*i don't think this is required for this lab
-	Xsub b[31:0] cin0#32 b_in[31:0] xor2
+    *cin0 indicates if the second number will be subtracted (0 to add, 1 to subtract)
+	*if subtracted, inverts the digits of the second number
+	*the function of inverting a digit if the second digit is on
+	*is equivalent to an xor gate
+	*then cin0 becomes the add 1 for the least significant digit
+	*inverting the digits and adding 1 
+	*turns the second number to its 2's complement
+	Xsub[31:0] b[31:0] cin0#32 b_in[31:0] xor2
 
-	*the adders
-    Xadd a[31:0] b_in[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
+	*chaining the full adders
+	*the carry out of an adder is the carry in of the next adder
+	*the carry in of the adder for the least significant digit is cin0
+    Xadd[31:0] a[31:0] b_in[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
 .ends
 
 *instantiation
@@ -53,7 +57,6 @@ Xsum a[31:0] b[31:0] subtract sum[31:0] c31 c30 add32
 *change to constant1 if subtracting
 Xcin subtract constant0
 
-*not sure if this is correct
 *create digital waveforms for testing
 Wa a[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
 + 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
@@ -61,9 +64,10 @@ Wa a[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
 Wb b[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
 + 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
 
-.tran 11200ns
+.tran 200ns
 .plot a[31:0]
 .plot b[31:0]
 .plot sum[31:0]
-
+.plot c31
+.plot c30
 

@@ -1,0 +1,51 @@
+*******************************************************************************
+
+* LAB #3
+* - Balisacan, Lucas Matthew
+* - Sulay, Lucia Danielle
+* - Tulio, Eimer Justin
+
+*******************************************************************************
+
+.include "8clocks.jsim"
+.include "nominal.jsim"
+.include "stdcell.jsim"
+
+*******************************************************************************
+
+.subckt fa A B Cin Sum Cout
+	Xxor1 A B XOR_1 xor2
+	Xxor2 XOR_1 Cin Sum xor2
+	Xnand1 A B NAND_1 nand2
+	Xnand2 XOR_1 Cin NAND_2 nand2
+	Xnand3 NAND_1 NAND_2 Cout nand2
+.ends
+
+.subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
+    Xfa0 a0 b0 cin0 sum0 cout0 fa
+    Xfa[31:1] a[31:1] b[31:1] cout[30:0] sum[31:1] cout[31:1] fa
+.ends
+
+* instantiation
+Xsum a[31:0] b[31:0] 0 sum[31:0] c31 c30 add32
+
+Wa a[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
++ 0x00000000 0x55555555 0x00000000 0x55555555 0xFFFFFFFF
++ 0xAAAAAAAA 0x00000000 0xAAAAAAAA 0x00000001 0xFFFFFFFF
+
+Wb b[31:0] nrz(0, 5, 20ns, 0ns, 0.001ns, 0.001ns)
++ 0x00000000 0x00000000 0x55555555 0x55555555 0xFFFFFFFF
++ 0x00000000 0xAAAAAAAA 0xAAAAAAAA 0xFFFFFFFF 0x00000001
+
+.tran 200ns
+.plot a[31:0]
+.plot b[31:0]
+.plot sum[31:0]
+.plot c31
+.plot c30
+
+* Overflow flag (manual): overflow = c31 XOR c30
+
+*******************************************************************************
+
+* Test Cases:
