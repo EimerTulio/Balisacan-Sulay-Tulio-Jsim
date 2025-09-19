@@ -74,7 +74,21 @@
 * We pass it a single-bit reset signal, a 32-bit increment value, a 32-bit
 * register, and a clock signal (we just used the JSim-predefined clk1).
 *******************************************************************************
+
+* FAST CLOCK: 6ns period (vs. clk1Ã¢ÂÂs 9.8ns)
+* Vclk_fast clk_fast 0 pulse(0,5,2.9ns,0.1ns,0.1ns,2.9ns)
+
+* SUPER-FAST CLOCK: 3ns period (use only if needed)
+* Vclk_turbo clk_turbo 0 pulse(0,5,1.4ns,0.1ns,0.1ns,1.4ns)
+
+* ORIGINAL
 Xcounter32 reset incr[31:0] reg[31:0] clk1 counter32
+
+* FASTER TEST
+* Xcounter32 reset incr[31:0] reg[31:0] clk_fast counter32
+
+* SUPER-FAST TEST
+* Xcounter32 reset incr[31:0] reg[31:0] clk_turbo counter32
 
 *******************************************************************************
 * This "reset" waveform sets up a reset signal that has a delayed start of 15ns
@@ -104,8 +118,10 @@ Wincr incr[31:0] nrz(0, 5, 50ns, 0ns, 0.001ns, 0.001ns)
 * Plot our reset waveform, our incr waveform, clk1, and your 32-bit register.
 * Note: sd() displays a range of nodes as a signed decimal (instead of hex)
 *******************************************************************************
-.tran 300ns
+.tran 100ns
 .plot reset
 .plot sd(incr[31:0])
 .plot clk1
+* .plot clk_fast
+* .plot clk_turbo
 .plot sd(reg[31:0])
