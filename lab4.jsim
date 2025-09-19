@@ -12,8 +12,11 @@
 .include "stdcell.jsim"
 
 *******************************************************************************
-* Plug-in your full adder and 32-bit ripple-carry adder subcircuits here.
+
+* First, we plug-in our full adder and 32-bit ripple-carry adder subcircuits.
+
 *******************************************************************************
+
 .subckt fa a b c_in sum c_out
   Xxor1 a b XOR_1 xor2
 	Xxor2 XOR_1 c_in Sum xor2
@@ -27,8 +30,14 @@
 .ends
 
 *******************************************************************************
-* Your new counter32 subcircuit code should go here.
+
+* Next, we define our new counter32 subcircuit.
+* We instantiate the 32-bit adder,
+* 32 copies of the multiplexer,
+* and 32 copies of the D-type flip-flop (dreg).
+
 *******************************************************************************
+
 .subckt counter32 reset a[31:0] f[31:0] clk
   Xsum a[31:0] f[31:0] 0 sum[31:0] cout[31:30] add32
   Xmux[31:0] reset#32 sum[31:0] 0#32 z[31:0] mux2
@@ -36,49 +45,32 @@
 .ends
 
 *******************************************************************************
-* Pitfall: DON'T use numbers AND iterators in your node names at the same time,
-*          e.g., temp[31:0] and temp2[31:0] will result in conflicts!
-*
-* Also, you may need to use these statements when making your own counter32:
-*
-* .connect node othernode(s)...
-*  = connects the first node to all the subsequent nodes
-*    - For example, ".connect a b[31:0]" connects a to b31, b30, ..., b0.
-*    - You can also connect nodes directly to ground ("false") by saying
-*      ".connect 0 othernode(s)..."
-*    - You can also connect nodes directly to vdd ("true") by saying
-*      ".connect vdd othernode(s)..."
-*
-* Xid s d0 d1 z mux2
-*  = "mux2" defines a 2-way multiplexer circuit.
-*    - If s = 0, node z is set to the value of node d0.
-*    - If s = 1, node z is set to the value of node d1.
-*    - s, d0, d1 and z are SINGLE BITS. As usual, use iterators to create
-*      several multiplexers at once.
-*    - Note that the reset node of your counter32 is only a single bit
-*      (NOT 32 bits), so to use it with multiple multiplexers, use the form
-*      "node#n" to make n copies of the node, e.g., "reset#32".
-*
-* Xid d clk q dreg
-*  = "dreg" defines a flip-flop register q (a single bit of "memory") and sets
-*    it to the value of another node, d.
-*    - Unlike "connect"-ing nodes, the value only gets stored into q when clk
-*      is doing a rising transition (also known as a "positive edge trigger").
-*    - Hint: You will also need iteration for this since we need a 32-bit
-*      register, which means you will also need to make 32 copies of clk.
-*******************************************************************************
 
-*******************************************************************************
-* Finally, it's time to simulate.
-* This circuit block instantiates the counter32 circuit that you just wrote.
+* Afterwards, we simulate by instantiating the counter32 circuit.
 * We pass it a single-bit reset signal, a 32-bit increment value, a 32-bit
-* register, and a clock signal (we just used the JSim-predefined clk1).
+* register, and a clock signal.
+
+* For the clock signals,
+* we first used the JSim-predefined clk1.
+* Afterwards, in line with Guide Question #2,
+* the group defined 2 clks that are faster than clk1:
+* clk_fast, with a 6ns period, and
+* clk_turbo, with a 3ns period.
+* This was done by referring to 8clocks.jsim
+* and studying how the clks were defined.
+
+* There are 3 instantiations listed below,
+* each using a different clk.
+* The group commented out and uncommented the different instantiations
+* in order to compare and see how faster and slower clks
+* affect the plots and outputs.
+
 *******************************************************************************
 
-* FAST CLOCK: 6ns period (vs. clk1Ã¢ÂÂs 9.8ns)
+* FAST CLOCK: 6ns period
 * Vclk_fast clk_fast 0 pulse(0,5,2.9ns,0.1ns,0.1ns,2.9ns)
 
-* SUPER-FAST CLOCK: 3ns period (use only if needed)
+* SUPER-FAST CLOCK: 3ns period
 * Vclk_turbo clk_turbo 0 pulse(0,5,1.4ns,0.1ns,0.1ns,1.4ns)
 
 * ORIGINAL
@@ -91,16 +83,20 @@ Xcounter32 reset incr[31:0] reg[31:0] clk1 counter32
 * Xcounter32 reset incr[31:0] reg[31:0] clk_turbo counter32
 
 *******************************************************************************
+
 * This "reset" waveform sets up a reset signal that has a delayed start of 15ns
 * and then goes to the next value every 50ns.
 * The values "1 0 0 0 1 0" indicate that the reset signal only turns on twice
 * (at times 15ns and 215ns) for a period of 50ns intervals each, and the signal
 * is turned off otherwise.
+
 *******************************************************************************
+
 Wreset reset nrz(0, 5, 50ns, 15ns, 0.001ns, 0.001ns)
 + 1 0 0 0 1 0
 
 *******************************************************************************
+
 * This "incr" waveform sets up a increment value for your counter32 circuit.
 * Note that it does NOT have a delayed start. The values "0 1 3 -1" roughly
 * translate to the following "commands" in Java-like syntax:
@@ -110,15 +106,28 @@ Wreset reset nrz(0, 5, 50ns, 15ns, 0.001ns, 0.001ns)
 *   reg--;     // -1 means decrement by 1
 * But note that these "commands" will happen EVERY positive clock edge (and
 * only when your reset signal is off)!
+
 *******************************************************************************
+
 Wincr incr[31:0] nrz(0, 5, 50ns, 0ns, 0.001ns, 0.001ns)
 + 0 1 3 -1
 
 *******************************************************************************
-* Plot our reset waveform, our incr waveform, clk1, and your 32-bit register.
+
+* Afterwards, we plot the reset waveform, the incr waveform,
+* clk, and the 32-bit register.
 * Note: sd() displays a range of nodes as a signed decimal (instead of hex)
+
+* There are 3 different plot codes for clk listed below,
+* each using a different clk:
+* clk1, clk_fast, and clk_turbo.
+* The group commented out and uncommented the different plots
+* in order to compare and see how faster and slower clks
+* affect the outputs.
+
 *******************************************************************************
-.tran 100ns
+
+.tran 300ns
 .plot reset
 .plot sd(incr[31:0])
 .plot clk1
@@ -127,8 +136,39 @@ Wincr incr[31:0] nrz(0, 5, 50ns, 0ns, 0.001ns, 0.001ns)
 .plot sd(reg[31:0])
 
 *******************************************************************************
-* 2a. 
-* The outputs from the adder and reset signal are sent as soon as they can, 
+
+* GUIDE QUESTIONS
+
+*******************************************************************************
+
+* 2a.
+* For normal counting, when reset = 0, the counter follows the rule
+* reg (next) = reg + incr.
+* So if incr = 1, it counts upward (e.g., 0, 1, 2, 3, ...).
+* If incr = -1, it counts downward (e.g. ..., 15, 14, 13, ...).
+* In our waveform, at the beginning,
+* incr = 1 so the reg increments each clock.
+* Later, incr = 3 so the reg increments by 3 each cycle.
+* And later still, incr = -1 so the reg decrements each cycle.
+
+* For reset behavior, shen reset = 1,
+* the mux selects 0 (ground) instead of the adder output.
+* On the next rising edge of clk1, all flip-flops load 0,
+* which is why we see reg go back to 0 only after the clock edge during reset.
+
+* In terms of the significant delay,
+* the adder and mux calculate the new value (sum or 0) combinationally
+* as soon as incr or reset changes.
+* HOWEVER, the register does not update immediately.
+* It waits for the rising edge of clk1.
+* Thus, outputs update only on the clock.
+* The delay is clocked storage behavior:
+* Inputs change, so the the next-state value is ready.
+* On the next clock edge, that value gets latched into reg.
+* Until then, reg still shows the old value.
+
+* To synthesize,
+* the outputs from the adder and reset signal are sent as soon as they can, 
 * even as they pass through the mux, but the outputs of the dregs are 
 * positive-edge triggered. This means that the inputs have always have to wait 
 * until the start of the next pulse before they get reflected in the outputs, 
@@ -137,12 +177,50 @@ Wincr incr[31:0] nrz(0, 5, 50ns, 0ns, 0.001ns, 0.001ns)
 * before it gets reflected in the output. The output also serves as an input 
 * for the adder, so the adder can only start incrementing/decrementing once 
 * the output updates.
-*
+
+* Thus, the big green bar at the beginning of reg[31:0]
+* is the simulator showing that the register’s value is unknown
+* before the very first active clock edge.
+* At time 0, the flip-flops that make up reg[31:0] haven’t been clocked yet.
+* Until the first rising edge of clk1 happens, they don’t contain a valid value.
+* This is marked as undefined (hence the big green bar).
+* Once the first clock edge arrives, the register samples its input
+* (either 0 if reset is active, or sum if counting),
+* then reg starts showing real numbers.
+
+* The register cannot update until a clock edge "tells" it to.
+
+*******************************************************************************
+
 * 2b.
 * If the clock is too fast, some inputs may still be changing when the dreg 
 * updates its value. This may lead to the dregs taking in an incorrect or even 
 * undefined value, which feed back into the adder and turn the data circulating 
 * within into garbage. For this circuit, the carry possibly taking long 
 * rippling 31 times is the main limiting factor to how fast the clock 
-* and counter can be.
+* and counter can be. Hence, if clk is too fast,
+* the adder hasn’t finished computing before the next rising edge.
+* The flip-flops sample a bus while it is still ripple-carrying through bits.
+* This is seen when using clk_turbo,
+* as when incr = 3, then later incr = -1,
+* after clean increments by 3 (48, 51, 54, 57, 60),
+* the plot starts presenting large negative numbers,
+* which do not follow the intended sequence and are unpredictable results.
+* They occur because the register captures partially computed adder outputs.
+* Some high bits updated, and some low bits had not updated yet,
+* so the sampled 32-bit number is a corrupted mix of old and new values.
+* When interpreted as signed, it is presented as a large negative number.
+
+* To synthesize,
+* what stops us from using a super-fast clock is that
+* the counter’s combinational logic (adder + mux) and the flip-flops
+* have FINITE propagation delays.
+* At very short clock periods, the next-state value is not
+* guaranteed to be stable before the clock edge,
+* so the flip-flops capture incorrect, partially updated data.
+* In the clk_turbo waveform this appears as corrupted,
+* nonsensical negative values instead of clean increments.
+* The limit is the critical path delay:
+* the clock must be SLOWER than this path, otherwise the counter misbehaves.
+
 *******************************************************************************
