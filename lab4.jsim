@@ -125,3 +125,19 @@ Wincr incr[31:0] nrz(0, 5, 50ns, 0ns, 0.001ns, 0.001ns)
 * .plot clk_fast
 * .plot clk_turbo
 .plot sd(reg[31:0])
+
+*******************************************************************************
+* 2a. 
+* The outputs from the adder and reset signal are sent as soon as they can, 
+* even as they pass through the mux, but the outputs of the dregs are 
+* positive-edge triggered. This means that the inputs have always have to wait 
+* until the start of the next pulse before they get reflected in the outputs, 
+* no matter how long until the next pulse starts. Notably, if the input gets 
+* sent just after the pulse starts, there is a delay of almost a whole pulse 
+* before it gets reflected in the output. The output also serves as an input 
+* for the adder, so the adder can only start incrementing/decrementing once 
+* the output updates.
+
+* 2b.
+
+*******************************************************************************
