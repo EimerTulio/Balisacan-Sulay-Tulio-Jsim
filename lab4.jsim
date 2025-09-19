@@ -137,7 +137,12 @@ Wincr incr[31:0] nrz(0, 5, 50ns, 0ns, 0.001ns, 0.001ns)
 * before it gets reflected in the output. The output also serves as an input 
 * for the adder, so the adder can only start incrementing/decrementing once 
 * the output updates.
-
+*
 * 2b.
-
+* If the clock is too fast, some inputs may still be changing when the dreg 
+* updates its value. This may lead to the dregs taking in an incorrect or even 
+* undefined value, which feed back into the adder and turn the data circulating 
+* within into garbage. For this circuit, the carry possibly taking long 
+* rippling 31 times is the main limiting factor to how fast the clock 
+* and counter can be.
 *******************************************************************************
