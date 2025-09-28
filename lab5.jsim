@@ -1,0 +1,78 @@
+*******************************************************************************
+
+* LAB #5
+* - Balisacan, Lucas Matthew 
+* - Sulay, Lucia Danielle
+* - Tulio, Eimer Justin
+
+*******************************************************************************
+
+.include "8clocks.jsim"
+.include "nominal.jsim"
+.include "stdcell.jsim"
+
+*******************************************************************************
+
+* First, we plug-in our full adder and 32-bit ripple-carry adder subcircuits.
+
+*******************************************************************************
+
+.subckt fa a b c_in sum c_out
+  Xxor1 a b XOR_1 xor2
+	Xxor2 XOR_1 c_in Sum xor2
+	Xnand1 a b NAND_1 nand2
+	Xnand2 XOR_1 c_in NAND_2 nand2
+	Xnand3 NAND_1 NAND_2 c_out nand2
+.ends
+
+.subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
+  Xadd[31:0] a[31:0] b[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
+.ends
+
+*******************************************************************************
+
+.subckt as32 a[31:0] b[31:0] op0 fas[31:0] n v z
+    Xinv[31:0] b[31:0] not_b[31:0] inverter
+    Xmux[31:0] op0 b[31:0] not_b[31:0] mux_out[31:0] mux2
+    Xadd a[31:0] mux_out[31:0] op0 fas[31:0] cout[31:30] add32
+
+    * n doesn't need since it's just fas31.
+    * for v:
+    X_xor cout31 cout30 v xor2 * Check if can do cout[31:30]
+
+    * for z:
+    X_or1[7:0] fas[31:24] fas[23:16] fas[15:8] fas[7:0] x_or1_out[7:0] or4 * Check if can do fas[31:30]
+    X_or2[1:0] x_or1_out[7:4] x_or1_out[3:0] x_or2_out[1:0] or2 * Check if can do x_or1_out[7:0]
+    Xnor x_or2_out1 x_or2_out0 z nor2 * Check if can do x_or2_out[1:0]
+
+    * using "pushing bubbles" method (drew it visually)
+    * using only NANDs/NORs for z:
+    * X_nor1[7:0] fas[31:24] fas[23:16] fas[15:8] fas[7:0] x_nor1_out[7:0] nor4 * Check if can do fas[31:30]
+    * X_nand[1:0] x_nor1_out[7:4] x_nor1_out[3:0] x_nand_out[1:0] nand2 * Check if can do x_nor1_out[7:0]
+    * Xnor2 x_nand_out1 x_nand_out0 z nor2 * Check if can do x_nand_out[1:0]
+.ends
+
+*******************************************************************************
+
+.subckt cmp32 n v z op[2:1] fcmp[31:0]
+
+    * invert n
+    X_invn n !n inverter
+
+    * if v=0, fcmp0=n; if v=1, fcmp0=!n
+    Xmux_one v n !n op1_zero_output mux2
+
+    * z OR op1_zero_output
+    Xor_one z op1_zero_output lt_or_equal or2
+
+    * if op2=0, fcmp0=z; if op2=1, lt_or_equal
+    Xmux_two op2 z lt_or_equal op1_one_output mux2
+
+    * if op1=0, op1_zero_output; if op1=1, op1_one_output
+    Xmux_three op1 op1_zero_output op1_one_output fcmp0 mux2
+
+.ends
+
+* instantiate
+Xas32 a[31:0] b[31:0] op0 fas[31:0] fas31 v z as32
+Xcmp32 fas31 v z op[2:1] 0#31 fcmp0 cmp32
