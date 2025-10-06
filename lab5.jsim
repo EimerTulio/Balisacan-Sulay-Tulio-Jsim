@@ -31,48 +31,79 @@
 
 *******************************************************************************
 
+* Next, we define the subcircuit as32.
+* It includes an inverter to invert all the bits of B when subtracting.
+* The two-way multiplexer selects B or ~B depending on op0.
+* add32 is then instantiated with A and the result of the multiplexer as inputs,
+* and op0 as the carry-in bit.
+
+* n is just fas31.
+* v is the XOR of the last two carry bits.
+* z is the result of a 32-bit OR gate, built using 10 4-input OR gates
+* and 1 2-input NOR gate.
+
+* The group also tried using only NANDs/NORs for z,
+* using the "pushing bubbles" method (drew it visually).
+* This version of the 32-bit OR gate uses 8 4-input NOR gates,
+* 2 4-input NAND gates,
+* and 1 2-input NOR gate.
+
+*******************************************************************************
+
 .subckt as32 a[31:0] b[31:0] op0 fas[31:0] n v z
+    
+    * for subtractor:
     Xinv[31:0] b[31:0] not_b[31:0] inverter
     Xmux[31:0] op0#32 b[31:0] not_b[31:0] mux_out[31:0] mux2
     Xadd a[31:0] mux_out[31:0] op0 fas[31:0] cout[31:30] add32
 
-    * n doesn't need since it's just fas31.
-    * sir said to use .connect fas31 n
+    * for n:
     .connect fas31 n
 
     * for v:
-    X_xor cout31 cout30 v xor2
-* Check if can do cout[31:30]
+    X_xor cout[31:30] v xor2
 
     * for z:
-    * 1st level
-    X_or1[7:0] fas[31:24] fas[23:16] fas[15:8] fas[7:0] x_or1_out[7:0] or4
-    * Check if can do fas[31:30]
+    X_or1[7:0] fas[31:0] x_or1_out[7:0] or4
+    X_or2[1:0] x_or1_out[7:0] x_or2_out[1:0] or4
+    Xnor x_or2_out[1:0] z nor2
 
-    * 2nd level
-    X_or2[1:0] x_or1_out[7:6] x_or1_out[5:4] x_or1_out[3:2] x_or1_out[1:0] x_or2_out[1:0] or4
-    * Check if can do x_or1_out[7:0]
-
-    * 3rd level
-    Xnor x_or2_out1 x_or2_out0 z nor2
-    * Check if can do x_or2_out[1:0]
-
-    * using "pushing bubbles" method (drew it visually)
     * using only NANDs/NORs for z:
-    * X_nor1[7:0] fas[31:24] fas[23:16] fas[15:8] fas[7:0] x_nor1_out[7:0] nor4 * Check if can do fas[31:30]
-    * X_nand[1:0] x_nor1_out[7:4] x_nor1_out[3:0] x_nand_out[1:0] nand2 * Check if can do x_nor1_out[7:0]
-    * Xnor2 x_nand_out1 x_nand_out0 z nor2 * Check if can do x_nand_out[1:0]
+    * X_nor1[7:0] fas[31:0] x_nor1_out[7:0] nor4
+    * X_nand[1:0] x_nor1_out[7:0] x_nand_out[1:0] nand4
+    * Xnor2 x_nand_out[1:0] z nor2
+
 .ends
+
+*******************************************************************************
+
+* Next, we define the subcircuit cmp32.
+
+* The result of checking for A = B is simply equal to z,
+* since if A = B, then A - B = 0.
+
+* The result of checking for A < B is simply the XOR of n and v.
+* This conclusion was derived through a truth table.
+
+* The result of checking for A <= B is simply the OR of z (A = B),
+* and the XOR of n and v (A < B).
+
+* fcmp[31:1] are connected to ground,
+* since fcmp0 is used for the comparator result.
+
+* A four-way multiplexer is used based on the specified opcodes
+* for each comparison.
+* Since op2=1 and op1=0 is a don't care condition,
+* the result is set to 0.
 
 *******************************************************************************
 
 .subckt cmp32 n v z op[2:1] fcmp[31:0]
 
-    * A = B; 1 if z=1 so just z
-    * A < B
+    * for A < B:
     X_lt n v lt_output xor2
 
-    * A <= B
+    * for A <= B:
     X_lte z lt_output lte_output or2
 
     * 4-way mux
@@ -84,9 +115,17 @@
 
 *******************************************************************************
 
-* instantiate
+* Finally, we instantiate as32 and cmp32 together,
+* following the chaining diagram given.
+
+*******************************************************************************
+
 Xas32 a[31:0] b[31:0] op0 fas[31:0] n v z as32
 Xcmp32 n v z op[2:1] fcmp[31:0] cmp32
+
+*******************************************************************************
+
+* We then create digital waveforms for the given test cases.
 
 *******************************************************************************
 
@@ -121,6 +160,12 @@ Wop op[2:0] nrz(0, 28, 20ns, 0ns, 0.001ns, 0.001ns)
 
 *******************************************************************************
 
+* Finally, we plot the test cases, their results (sum/difference),
+* the results from comparison (fcmp0),
+* as well as n, v, and z.
+
+*******************************************************************************
+
 .tran 600ns
 .plot a[31:0]
 .plot b[31:0]
@@ -130,5 +175,23 @@ Wop op[2:0] nrz(0, 28, 20ns, 0ns, 0.001ns, 0.001ns)
 .plot n
 .plot v
 .plot z
+
+*******************************************************************************
+
+* CRITICAL PATH.
+* START: b0
+* END: fcmp0
+
+* GATES IN PATH, FROM START TO END:
+* START: b0
+* inverter (to invert all the bits of B when subtracting)
+* 2-way mux (selects B or ~B depending on op0)
+* FA_0 - 1 XOR (for A XOR B), 2 NANDs (for carry out)
+* FA_1 to FA_31 - 2 NANDs each, 62 NANDs total (from the carry ripple)
+* XOR (for v)
+* XOR (for less than)
+* OR (for less than or equal to)
+* 4-way mux (for comparison)
+* END: fcmp0
 
 *******************************************************************************
