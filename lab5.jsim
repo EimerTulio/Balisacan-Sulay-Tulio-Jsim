@@ -184,14 +184,14 @@ Wop op[2:0] nrz(0, 28, 20ns, 0ns, 0.001ns, 0.001ns)
 
 * GATES IN PATH, FROM START TO END:
 * START: b0
-* inverter (to invert all the bits of B when subtracting)
-* 2-way mux (selects B or ~B depending on op0)
-* FA_0 - 1 XOR (for A XOR B), 2 NANDs (for carry out)
-* FA_1 to FA_31 - 2 NANDs each, 62 NANDs total (from the carry ripple)
-* XOR (for v)
-* XOR (for less than)
-* OR (for less than or equal to)
-* 4-way mux (for comparison)
+* Xinv0 (inverter of b0 for subtraction)
+* Xmux0 (mux2 that selects b0 or ~b0 depending on op0)
+* Xadd0 - Xxor1 (for a0 XOR b0), Xnand2 (for Xxor1 nand op0), Xnand3 (combining Xnand2 and Xnand1)
+* Xadd1 to Xadd31 - 2 NANDs each (Xnand2 and Xnand3), 62 NANDs total (from the carry ripple)
+* X_xor (xor2 to check for v)
+* X_lt (xor2 to check if a < b)
+* X_lte (or2 to check if a < b or a = b)
+* Xmux_comp (mux4 to select less than/equal comparison)
 * END: fcmp0
 
 *******************************************************************************
