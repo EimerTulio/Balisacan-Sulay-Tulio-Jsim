@@ -33,17 +33,29 @@
 
 .subckt as32 a[31:0] b[31:0] op0 fas[31:0] n v z
     Xinv[31:0] b[31:0] not_b[31:0] inverter
-    Xmux[31:0] op0 b[31:0] not_b[31:0] mux_out[31:0] mux2
+    Xmux[31:0] op0#32 b[31:0] not_b[31:0] mux_out[31:0] mux2
     Xadd a[31:0] mux_out[31:0] op0 fas[31:0] cout[31:30] add32
 
     * n doesn't need since it's just fas31.
+    * sir said to use .connect fas31 n
+    .connect fas31 n
+
     * for v:
-    X_xor cout31 cout30 v xor2 * Check if can do cout[31:30]
+    X_xor cout31 cout30 v xor2
+* Check if can do cout[31:30]
 
     * for z:
-    X_or1[7:0] fas[31:24] fas[23:16] fas[15:8] fas[7:0] x_or1_out[7:0] or4 * Check if can do fas[31:30]
-    X_or2[1:0] x_or1_out[7:4] x_or1_out[3:0] x_or2_out[1:0] or2 * Check if can do x_or1_out[7:0]
-    Xnor x_or2_out1 x_or2_out0 z nor2 * Check if can do x_or2_out[1:0]
+    * 1st level
+    X_or1[7:0] fas[31:24] fas[23:16] fas[15:8] fas[7:0] x_or1_out[7:0] or4
+    * Check if can do fas[31:30]
+
+    * 2nd level
+    X_or2[1:0] x_or1_out[7:6] x_or1_out[5:4] x_or1_out[3:2] x_or1_out[1:0] x_or2_out[1:0] or4
+    * Check if can do x_or1_out[7:0]
+
+    * 3rd level
+    Xnor x_or2_out1 x_or2_out0 z nor2
+    * Check if can do x_or2_out[1:0]
 
     * using "pushing bubbles" method (drew it visually)
     * using only NANDs/NORs for z:
@@ -56,23 +68,67 @@
 
 .subckt cmp32 n v z op[2:1] fcmp[31:0]
 
-    * invert n
-    X_invn n !n inverter
+    * A = B; 1 if z=1 so just z
+    * A < B
+    X_lt n v lt_output xor2
 
-    * if v=0, fcmp0=n; if v=1, fcmp0=!n
-    Xmux_one v n !n op1_zero_output mux2
+    * A <= B
+    X_lte z lt_output lte_output or2
 
-    * z OR op1_zero_output
-    Xor_one z op1_zero_output lt_or_equal or2
+    * 4-way mux
+    Xmux_comp op[2:1] 0 lt_output z lte_output fcmp0 mux4
 
-    * if op2=0, fcmp0=z; if op2=1, lt_or_equal
-    Xmux_two op2 z lt_or_equal op1_one_output mux2
-
-    * if op1=0, op1_zero_output; if op1=1, op1_one_output
-    Xmux_three op1 op1_zero_output op1_one_output fcmp0 mux2
+    .connect 0 fcmp[31:1]
 
 .ends
 
+*******************************************************************************
+
 * instantiate
-Xas32 a[31:0] b[31:0] op0 fas[31:0] fas31 v z as32
-Xcmp32 fas31 v z op[2:1] 0#31 fcmp0 cmp32
+Xas32 a[31:0] b[31:0] op0 fas[31:0] n v z as32
+Xcmp32 n v z op[2:1] fcmp[31:0] cmp32
+
+*******************************************************************************
+
+Wa a[31:0] nrz(0, 28, 20ns, 0ns, 0.001ns, 0.001ns)
++ 0 0x55555555 0 0x55555555 -1 0 0
++ 0xAAAAAAAA 0 0xAAAAAAAA 1 -1 0x80000000 -1
++ 2 2 2
++ 0x80000000 0x80000000 0x80000000
++ 3 3 3
++ 0x7FFFFFFF 0x7FFFFFFF 0x7FFFFFFF
++ 3 3 3
+
+
+Wb b[31:0] nrz(0, 28, 20ns, 0ns, 0.001ns, 0.001ns)
++ 0 0 0x55555555 0x55555555 -1 0 -1
++ 0 0xAAAAAAAA 0xAAAAAAAA -1 1 0x80000000 -1
++ -3 -3 -3
++ 2 2 2
++ 5 5 5
++ -2 -2 -2
++ 3 3 3
+
+
+Wop op[2:0] nrz(0, 28, 20ns, 0ns, 0.001ns, 0.001ns)
++ 0 0 0 0 0 1 1
++ 0 0 0 0 0 0 1
++ 3 5 7
++ 3 5 7
++ 3 5 7
++ 3 5 7
++ 3 5 7
+
+*******************************************************************************
+
+.tran 600ns
+.plot a[31:0]
+.plot b[31:0]
+.plot op[2:0]
+.plot fas[31:0]
+.plot fcmp0
+.plot n
+.plot v
+.plot z
+
+*******************************************************************************
