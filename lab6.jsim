@@ -1,0 +1,82 @@
+logical AND vs boolean AND
+bit-wise AND (bit mask let through anything that is 0) - bit positions you care about are set to 1
+bit-wise OR - bit positions you care about are set to 0
+
+PART 1: Bitwise Boolean Circuit
+
+Xm0 a0 b0 op0 op1 op2 op3 fbool0 mux4
+Xm1 a1 b1 op0 op1 op2 op3 fbool1 mux4
+--> just one line
+
+*********************************************************************************************************
+
+.subckt bool32 a[31:0] b[31:0] op[3:0] fbool[31:0]
+    Xmux[31:0] a[31:0] b[31:0] op0 op1 op2 op3 fbool[31:0] mux4
+.ends
+
+*********************************************************************************************************
+
+PART 2: Bit Shifter
+do shift right first
+repurpose to do a shift left
+
+a << 2
+shift 2 bits left
+multiply by 4 (bit shift by n, multiply by 2^n)
+works for positive and negative
+unless there's an overflow
+
+a >> 2
+shift right
+integer division
+bits dropped are the remainder
+modulo - bit mask by n bits (bit-wise AND)
+
+a >>> 2
+arithmetic shift right
+
+*********************************************************************************************************
+
+.subckt shift32 a[31:0] b[4:0] op[1:0] fshift[31:0]
+
+    * left or right
+    X1lr[31:0] op0 a[0:31] a[31:0] out[31:0] mux2
+
+
+    * type of shift
+    Xmux op[1:0] 0 0 0 a31 z mux4
+
+    * 16 bit-shifter (b4)
+    X16mux[31:0] b4 out[31:0] z a[31:1] 16_output[31:0] mux2
+
+    * 8 bit-shifter (b3)
+    X8mux[31:0] b3 16_output[31:0] z 16_output[31:1] 8_output[31:0] mux2
+
+    * 4 bit-shifter (b2)
+    X4mux[31:0] b2 8_output[31:0] z 8_output[31:1] 4_output[31:0] mux2
+
+    * 2 bit-shifter (b1)
+    X2mux[31:0] b1 4_output[31:0] z 4_output[31:1] 2_output[31:0] mux2
+
+    * 1 bit-shifter (b0)
+    X1mux[31:0] b0 2_output[31:0] z 2_output[31:1] 1_output[31:0] mux2
+
+
+    * left or right
+    X2lr[31:0] op0 1_output[0:31] 1_output[31:0] fshift[31:0] mux2
+
+.ends
+
+*********************************************************************************************************
+
+PART 3: ALU
+
+inside it, hook up as32 and cmp32
+
+optimize shift as much as possible
+
+explain what the waveform for alufn is
+
+LAB 4 COMMENTS
+clock went first
+-- propagation delay of the mux
