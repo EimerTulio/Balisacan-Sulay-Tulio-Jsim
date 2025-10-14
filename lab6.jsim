@@ -137,7 +137,7 @@
 
 
     * main mux4 - defined by alufn[5:4]
-    Xmux_alu[31:0] alufn5#32 alufn4#32 fas[31:0] fbool[31:0] fshift[31:0] fcmp[31:0] f[31:0] mux4
+    Xmux_alu[31:0] alufn4#32 alufn5#32 fas[31:0] fbool[31:0] fshift[31:0] fcmp[31:0] f[31:0] mux4
 
 .ends
 
