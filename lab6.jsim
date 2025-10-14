@@ -93,10 +93,10 @@
 
 
     * padding bit
-    Xmux_padbit op[1:0] 0 0 0 a31 z mux4
+    Xmux_padbit op1 0 a31 z mux2
 
     * 16 bit-shifter (b4)
-    X16mux[31:0] b4#32 out[31:0] z#16 a[31:16] 16_output[31:0] mux2
+    X16mux[31:0] b4#32 out[31:0] z#16 out[31:16] 16_output[31:0] mux2
 
     * 8 bit-shifter (b3)
     X8mux[31:0] b3#32 16_output[31:0] z#8 16_output[31:8] 8_output[31:0] mux2
