@@ -33,10 +33,12 @@
 
 .subckt as32 a[31:0] b[31:0] op0 fas[31:0] n v z
     
+    * to optimize for size, we took the truth table of putting b through an inverter 
+    * then choosing the inverted output only if subtracting is enabled
+    * the truth table is equivalent to an xor gate, bringing the count down by 32 gates
     * for subtractor:
-    Xinv[31:0] b[31:0] not_b[31:0] inverter
-    Xmux_sub[31:0] op0#32 b[31:0] not_b[31:0] mux_out[31:0] mux2
-    Xadd a[31:0] mux_out[31:0] op0 fas[31:0] cout[31:30] add32
+    Xsub[31:0] b[31:0] op0#32 b_out[31:0] xor2
+    Xadd a[31:0] b_out[31:0] op0 fas[31:0] cout[31:30] add32
 
     * for n:
     .connect fas31 n
