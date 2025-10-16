@@ -67,8 +67,8 @@
     X_lte z lt_output lte_output or2
 
     * turned mux4 into 3-way mux using 2 mux2s, uses 1 less gate
-    Xmux1 op1 z lte_output op1_out mux2
-    Xmux2 op2 op1_out z fcmp0 mux2
+    Xmux1 op1 lt_output lte_output op1_out mux2
+    Xmux2 op2 z op1_out fcmp0 mux2
 
     .connect 0 fcmp[31:1]
 
