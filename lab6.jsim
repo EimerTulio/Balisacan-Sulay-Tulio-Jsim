@@ -89,9 +89,12 @@
 .subckt shift32 a[31:0] b[4:0] op[1:0] fshift[31:0]
 
     * left or right
+    * If left, the bit is reversed, since all the shifters are meant for right 
+    * shifts. The bit is then reversed again later on, after going through all 
+    * the shifters This allows us to conserve on the total number of gates by  
+    * not having to make another set of shifters for left shifting. 
     X1lr[31:0] op0#32 a[0:31] a[31:0] out[31:0] mux2
-
-
+    
     * padding bit
     Xmux_padbit op1 0 a31 z mux2
 
@@ -112,6 +115,8 @@
 
 
     * left or right
+    * Again, if it was a left shift, this is where the bit is reveresed again,
+    * back to its original form.
     X2lr[31:0] op0#32 1_output[0:31] 1_output[31:0] fshift[31:0] mux2
 
 .ends
