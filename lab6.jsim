@@ -34,10 +34,10 @@
 .subckt as32 a[31:0] b[31:0] op0 fas[31:0] n v z
     
     * to optimize for size, we took the truth table of putting b through an inverter 
-    * then choosing the inverted output only if subtracting is enabled
+    * then choosing the inverted output only if subtraction is enabled
     * the truth table is equivalent to an xor gate, bringing the count down by 32 gates
     * for subtractor:
-    Xsub[31:0] b[31:0] op0#32 b_out[31:0] xor2
+    Xneg[31:0] b[31:0] op0#32 b_out[31:0] xor2
     Xadd a[31:0] b_out[31:0] op0 fas[31:0] cout[31:30] add32
 
     * for n:
@@ -66,8 +66,9 @@
     * for A <= B:
     X_lte z lt_output lte_output or2
 
-    * 4-way mux
-    Xmux_comp op[2:1] 0 lt_output z lte_output fcmp0 mux4
+    * turned mux4 into 3-way mux using 2 mux2s, uses 1 less gate
+    Xmux1 op1 z lte_output op1_out mux2
+    Xmux2 op2 op1_out z fcmp0 mux2
 
     .connect 0 fcmp[31:1]
 
