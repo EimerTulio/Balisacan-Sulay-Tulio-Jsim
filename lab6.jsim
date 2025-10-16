@@ -12,12 +12,13 @@
 .include "stdcell.jsim"
 
 *******************************************************************************
-*******************************************************************************
 
 * First, we plug-in our full adder and 32-bit ripple-carry adder subcircuits.
 
+*******************************************************************************
+
 .subckt fa a b c_in sum c_out
-  Xxor1 a b XOR_1 xor2
+    Xxor1 a b XOR_1 xor2
 	Xxor2 XOR_1 c_in Sum xor2
 	Xnand1 a b NAND_1 nand2
 	Xnand2 XOR_1 c_in NAND_2 nand2
@@ -25,17 +26,31 @@
 .ends
 
 .subckt add32 a[31:0] b[31:0] cin0 sum[31:0] cout[31:30]
-  Xadd[31:0] a[31:0] b[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
+    Xadd[31:0] a[31:0] b[31:0] cout[30:0] cin0 sum[31:0] cout[31:0] fa
 .ends
 
+*******************************************************************************
 
-******************* copying as32 and cmp32 from previous lab *******************
+* Next, we plug-in our as32 and cmp32 subcircuits.
+
+* To optimize for size, we changed the circuits a bit:
+
+* For the 32-bit adder/subtractor,
+* we took the truth table of putting b through an inverter
+* then choosing the inverted output only if subtraction is enabled.
+* We discovered that the truth table is equivalent to an XOR gate,
+* bringing the overall gate count down by 32 gates.
+
+* In stdcell.jsim, a 4-way mux is implemented using 3 2-way muxs.
+* So for the 32-bit comparator,
+* since we only need 3 conditions (1 is don't-care)
+* we turned the 4-way mux into a 3-way mux using 2 2-way muxs,
+* bringing the overall gate count down by 1 gate.
+
+*******************************************************************************
 
 .subckt as32 a[31:0] b[31:0] op0 fas[31:0] n v z
-    
-    * to optimize for size, we took the truth table of putting b through an inverter 
-    * then choosing the inverted output only if subtraction is enabled
-    * the truth table is equivalent to an xor gate, bringing the count down by 32 gates
+
     * for subtractor:
     Xneg[31:0] b[31:0] op0#32 b_out[31:0] xor2
     Xadd a[31:0] b_out[31:0] op0 fas[31:0] cout[31:30] add32
@@ -66,7 +81,7 @@
     * for A <= B:
     X_lte z lt_output lte_output or2
 
-    * turned mux4 into 3-way mux using 2 mux2s, uses 1 less gate
+    * turned mux4 into 3-way mux using 2 mux2s
     Xmux1 op1 lt_output lte_output op1_out mux2
     Xmux2 op2 z op1_out fcmp0 mux2
 
@@ -75,31 +90,68 @@
 .ends
 
 *******************************************************************************
-*******************************************************************************
-
 *********************** PART 1: Bitwise Boolean Circuit ***********************
+
+* For the bitwise boolean circuit, we simply used 32 4-way muxs,
+* 1 for each bit,
+* with a as s0 and b as s1,
+* and op[3:0] as the results of the truth table
+* of a specific boolean operation between a and b.
+
+*******************************************************************************
 
 .subckt bool32 a[31:0] b[31:0] op[3:0] fbool[31:0]
     Xmux_bool[31:0] a[31:0] b[31:0] op0#32 op1#32 op2#32 op3#32 fbool[31:0] mux4
 .ends
 
+*******************************************************************************
+***************************** PART 2: Bit Shifter *****************************
+
+* For the bit shifter, we first built a chain of 32 2-way muxs
+* for a logical right shift.
+* Each set of 32 2-way muxs uses the corresponding bit from b as a selector.
+* If the corresponding bit is 0,
+* it simply outputs the previous number as-is (no shift).
+* If the corresponding bit is 1,
+* it shifts the number by the designated number of bits
+* defined by the position of the bit in b[4:0] (either 16, 8, 4, 2, or 1),
+* and adds the pad bit.
+
+* The pad bit is determined by op1,
+* since logical right and logical left shifts and the don't-care condition
+* all have 0 as the pad bit.
+* If op1 is 1, then this signals an arithmetic right shift
+* and thus the pad bit is equal to a31, the sign bit.
+* This also reduces the overall gate count by 2,
+* as we originally used a 4-way mux (3 2-way muxs) but changed it to 1 2-way mux.
+
+* All shifters are made for right shifts,
+* but we did not want to make another set of shifters for a left shift.
+* This would have added 32 x 5 = 160 more gates to the overall gate count.
+* Instead, we realized that we could simply flip the bits
+* (e.g. 1000 becomes 0001),
+* shift right,
+* and flip the bits again.
+* This is equivalent to a left shift.
+
+* To do this, we used 2-way muxs
+* with op0 as a selector.
+* If op0 is 0,
+* this indicates a left shift so the bits are flipped before and after shifting.
+* If op0 is 1,
+* this indicates a right shift so the bits stay as-is before and after shifting.
 
 *******************************************************************************
-
-
-***************************** PART 2: Bit Shifter *****************************
 
 .subckt shift32 a[31:0] b[4:0] op[1:0] fshift[31:0]
 
     * left or right
-    * If left, the bit is reversed, since all the shifters are meant for right 
-    * shifts. The bit is then reversed again later on, after going through all 
-    * the shifters This allows us to conserve on the total number of gates by  
-    * not having to make another set of shifters for left shifting. 
     X1lr[31:0] op0#32 a[0:31] a[31:0] out[31:0] mux2
     
+
     * padding bit
     Xmux_padbit op1 0 a31 z mux2
+
 
     * 16 bit-shifter (b4)
     X16mux[31:0] b4#32 out[31:0] z#16 out[31:16] 16_output[31:0] mux2
@@ -118,16 +170,20 @@
 
 
     * left or right
-    * Again, if it was a left shift, this is where the bit is reveresed again,
-    * back to its original form.
     X2lr[31:0] op0#32 1_output[0:31] 1_output[31:0] fshift[31:0] mux2
 
 .ends
 
+*******************************************************************************
+******************************* PART 3: ALU ***********************************
 
-********************************************************************
+* Lastly, all subcircuits were instantiated in the ALU subcircuit,
+* which uses a 4-way mux to select which subcircuit output will be outputted
+* as defined by alufn[5:4].
+* alufn[3:0] is passed to the appropriate subcircuit's op[3:0],
+* where applicable.
 
-************************** PART 3: ALU *****************************
+*******************************************************************************
 
 .subckt alu32 a[31:0] b[31:0] alufn[5:0] f[31:0]
 
@@ -149,16 +205,19 @@
 
 .ends
 
-********************************************************************
+*******************************************************************************
 
-************************** INSTANTIATE *****************************
+* Finally, we instantiate the ALU subcircuit.
+
+*******************************************************************************
 
 Xalu32 a[31:0] b[31:0] alufn[5:0] f[31:0] alu32
 
-********************************************************************
+*******************************************************************************
 
-**************************** WAVEFORMS *****************************
+* We then paste the waveforms given to test our alu32.
 
+*******************************************************************************
 
 Wa a[31:0] nrz(0v,5.0v,20ns,0ns,.1ns,.1ns)
 + -1 0x55555555 0xAAAAAAAA 1 -2 -1 -1 0x55555555 0 -1 0x55555555 0
@@ -175,11 +234,12 @@ Wb b[31:0] nrz(0v,5.0v,20ns,0ns,.1ns,.1ns)
 Wf alufn[5:0] nrz(0v,5.0v,60ns,0ns,.1ns,.1ns)
 + 0 1 24 30 22 26 21 32 33 35 51 53 55
 
-
 *******************************************************************************
 
+* Finally, we plot the test cases and their results (f[31:0]).
+* TOTAL GATE COUNT: 625 GATES
 
-************************************ PLOTS ************************************
+*******************************************************************************
 
 .tran 800ns
 .plot a[31:0]
