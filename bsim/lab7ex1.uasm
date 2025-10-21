@@ -1,6 +1,6 @@
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-| This sample .uasm program processes an array of integers and computes
-| their total sum.
+| This sample .uasm program counts the number of even numbers in an array
+| of integers.
 |
 | Important notes:
 | 1. For Lab 7, you are expected to mark the data portions of your program

@@ -1,6 +1,6 @@
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 | This sample .uasm program processes an array of integers and computes
-| the sum of all even and odd numbers separately.
+| their total sum.
 |
 | Important notes:
 | 1. For Lab 7, you are expected to mark the data portions of your program
@@ -20,20 +20,11 @@
                             |   zero; you can shorten this to LD(INPUT, r0)
 LOOP:   ADDC(r1, 4, r1)     | r1 = r1 + 4 (note: r1 is initially 0)
         LD(r1, INPUT, r2)   | r2 = memory[r1 + INPUT]
-        ANDC(r2, 1, r3)     | bitwise mask to check if r2 (the current array number) is even
-        BNE(r3, ODD)        | if it is odd, branch to ODD
-
-EVEN:   ADD(r4, r2, r4)     | if it is even, add r2 to r4 (the even counter)
+        ADD(r3, r2, r3)     | r3 = r3 + r2 (keep a running total in r3)
         SUBC(r0, 1, r0)     | r0 = r0 - 1 (decrement the array counter)
         BNE(r0, LOOP)       | (B)ranch back to LOOP if r0 is (N)ot (E)qual to 0
-        BR(DONE)
 
-ODD:    ADD(r5, r2, r5)     | if it is odd, add r2 to r5 (the odd counter)
-        SUBC(r0, 1, r0)     | r0 = r0 - 1 (decrement the array counter)
-        BNE(r0, LOOP)       | (B)ranch back to LOOP if r0 is (N)ot (E)qual to 0
-        BR(DONE)
-
-DONE:   ST(r3, OUTPUT, r31) | otherwise, store r3 into memory[OUTPUT + r31]
+        ST(r3, OUTPUT, r31) | otherwise, store r3 into memory[OUTPUT + r31]
                             |  note: you can shorten this to ST(r3, OUTPUT)
         HALT()              | then, finish execution
 
