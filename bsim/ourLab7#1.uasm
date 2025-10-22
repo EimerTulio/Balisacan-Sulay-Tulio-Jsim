@@ -1,0 +1,46 @@
+.include beta.uasm          | include the standard predefined macros
+
+        LD(r31, INPUT, r1)       | r1 = N (number of terms) and acts as the counter for the loop
+        LD(r31, OUTPUT, r2)      | r2 = pointer to OUTPUT
+
+        ADDC(r31, 0, r3)         | r3 = F0 = 0
+        ADDC(r31, 1, r4)         | r4 = F1 = 1
+
+        BEQ(r1, DONE, r31)       | if r1 (counter) is 0 --> end the program, else continue to next part
+
+        ST(r3, OUTPUT, r2)       | if r1 (counter) is 1, store r3 (0) into OUTPUT, then end the program
+        SUBC(r1, 1, r1)          | 
+        BEQ(r1, DONE, r31)       | i.e. if N == 1 --> store 0 into OUTPUT, then HALT(), else continue to next part
+
+LOOP:   ADDC(r2, 4, r2)          | increments the pointer of OUTPUT, making it point to the next index for the next Fib number
+        ST(r4, OUTPUT, r2)       | store r4 (which currently holds the new Fib number) at the current address of OUTPUT (r2)
+
+        BEQ(r1, DONE, r31)       | if counter reaches zero --> end the program, else continue with calculating for the next Fib number 
+
+        SUBC(r1, 1, r1)          | decrements the counter by 1
+
+        ADD(r3, r4, r5)          | adds F0 (r3) with F1 (r4) to create the next Fib number in the sequence (r5)
+        ADDC(r4, 0, r3)          | replaces F0 (r3) with F1 (r4)
+        ADDC(r5, 0, r4)          | replaces F1 (r4) with the new Fib number
+
+        BR(LOOP)
+
+DONE:   HALT()              
+
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+| The "." statement changes the current memory location of any succeeding
+| UASM macros, so that it is easy to locate in the BSim window.
+| - If you omit this statement, the INPUT memory block would begin directly
+|   after your program block.
+| - You may need to adjust this memory location to make more memory space for
+|   your data.
+. = 0x19C
+
+| INPUT marks the beginning of the memory block containing the hardcoded
+| user "input".
+INPUT: LONG(5)   
+
+| OUTPUT marks the memory block where the output will appear.
+| Nothing follows the label because the output will be written by the program.
+OUTPUT:
