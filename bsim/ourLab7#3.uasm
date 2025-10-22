@@ -1,0 +1,81 @@
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+| This file encrypts an array of numbers by doing bitwise XOR in a stream
+| cipher.
+|
+| Lab 7 #3
+| - Balisacan, Lucas Matthew
+| - Sulay, Lucia Danielle
+| - Tulio, Eimer Justin
+|
+
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+.include beta.uasm          | include the standard predefined macros
+        
+                                | guide
+                                | r0 - key counter
+                                | r1 - key address
+                                | r2 - plaintext counter
+                                | r3 - plaintext address
+                                | r4 - key value
+                                | r5 - plaintext value
+
+                                | initialize array counters
+        LD(r31, PLAINTEXT, r2)  | r2 = memory[r31 + INPUT] (the plaintext array length)
+                                | note: r0 is not initialized here because
+                                | it will get initialized in the following code
+
+                                | section that iterates through the key array
+LOOP:   BNE(r0, SKIP)           | checks if key counter has reached end
+                                | if it has, doesn't skip code that resets the counter
+        LD(r31, KEY, r0)        | set/initialize key counter to initial value
+        ANDC(r1, 0, r1)         | turn r1 back to 0 (is there a better way to do this?)
+SKIP:   ADDC(r1, 4, r1)         | r1 = r1 + 4 (note: r1 is initially 0)
+        LD(r1, KEY, r4)         | r4 = memory[r1 + KEY] (load next array value to r4)
+
+                                | section that iterates through the plaintext array
+        ADDC(r3, 4, r3)         | r3 = r3 + 4 (note: r3 is initially 0)
+        LD(r3, PLAINTEXT, r5)   | r5 = memory[r3 + KEY] (load next array value to r5)
+
+                                | the actual code
+        XOR(r4, r5, r5)         | r5 = r5 XOR r4
+        ST(r5, ENCRYPTED, r3)   | mem[ENCRYPTED + r3] = r5 (store r5 into next array entry)
+                                | note: i think because r3 starts at 4 instead of 0  
+                                | this starts storing at ENCRYPTED[1] instead of  
+                                | ENCRYPTED[0]. not sure if that's correct
+
+                                | code that handles loop termination/continuation
+        SUBC(r0, 1, r0)         | r0 = r0 - 1 (decrement the key counter)
+        SUBC(r2, 1, r2)         | r1 = r1 - 1 (decrement the plaintext counter)
+        BNE(r2, LOOP)           | (B)ranch back to LOOP if r2 is (N)ot (E)qual to 0
+
+        HALT()                  | then, finish execution             
+
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+| The "." statement changes the current memory location of any succeeding
+| UASM macros, so that it is easy to locate in the BSim window.
+| - If you omit this statement, the INPUT memory block would begin directly
+|   after your program block.
+| - You may need to adjust this memory location to make more memory space for
+|   your data.
+. = 0x19C
+
+| The following pointers mark the memory blocks where the respective values 
+| will appear. 
+KEY:
+        LONG(2)                 | <-- length of the array
+        LONG(42)                | <-- first element of the array
+        LONG(67)                | <-- last element of the array
+
+PLAINTEXT:
+        LONG(5)                 | <-- length of the array
+        LONG(72)                | <-- first element of the array
+        LONG(69)
+        LONG(76)
+        LONG(76)
+        LONG(79)                | <-- last element of the array
+
+| This is empty because it will be written to by the program.
+ENCRYPTED:
