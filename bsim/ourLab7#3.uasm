@@ -1,5 +1,4 @@
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
 | This file encrypts an array of numbers by doing bitwise XOR in a stream
 | cipher.
 |
@@ -8,7 +7,6 @@
 | - Sulay, Lucia Danielle
 | - Tulio, Eimer Justin
 |
-
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 .include beta.uasm          | include the standard predefined macros
@@ -20,6 +18,7 @@
                                 | r3 - plaintext address
                                 | r4 - key value
                                 | r5 - plaintext value
+                                | r6 - encrypted output counter
 
                                 | initialize array counters
         LD(r31, PLAINTEXT, r2)  | r2 = memory[r31 + INPUT] (the plaintext array length)
@@ -30,7 +29,7 @@
 LOOP:   BNE(r0, SKIP)           | checks if key counter has reached end
                                 | if it has, doesn't skip code that resets the counter
         LD(r31, KEY, r0)        | set/initialize key counter to initial value
-        ANDC(r1, 0, r1)         | turn r1 back to 0 (is there a better way to do this?)
+        ADDC(r31, 0, r1)        | turn r1 back to 0
 SKIP:   ADDC(r1, 4, r1)         | r1 = r1 + 4 (note: r1 is initially 0)
         LD(r1, KEY, r4)         | r4 = memory[r1 + KEY] (load next array value to r4)
 
@@ -40,10 +39,8 @@ SKIP:   ADDC(r1, 4, r1)         | r1 = r1 + 4 (note: r1 is initially 0)
 
                                 | the actual code
         XOR(r4, r5, r5)         | r5 = r5 XOR r4
-        ST(r5, ENCRYPTED, r3)   | mem[ENCRYPTED + r3] = r5 (store r5 into next array entry)
-                                | note: i think because r3 starts at 4 instead of 0  
-                                | this starts storing at ENCRYPTED[1] instead of  
-                                | ENCRYPTED[0]. not sure if that's correct
+        ST(r5, ENCRYPTED, r6)   | mem[ENCRYPTED + r6] = r5 (store r5 into next array entry)
+        ADDC(r6, 4, r6)         | increment counter for storage location
 
                                 | code that handles loop termination/continuation
         SUBC(r0, 1, r0)         | r0 = r0 - 1 (decrement the key counter)

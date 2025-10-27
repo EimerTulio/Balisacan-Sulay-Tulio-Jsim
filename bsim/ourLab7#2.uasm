@@ -1,16 +1,12 @@
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-| This sample .uasm program processes an array of integers and computes
-| their total sum.
+| This file implements selection sort to sort an array of numbers from 
+| lowest to highest in-place.
 |
-| Important notes:
-| 1. For Lab 7, you are expected to mark the data portions of your program
-|    using labels, as demonstrated below using the labels INPUT: and OUTPUT:.
-| 2. While this sample program should work fine with most user inputs, there
-|    is an edge case that will cause this program to fail catastrophically.
-|    (Can you figure it out?)
+| Lab 7 #3
+| - Balisacan, Lucas Matthew
+| - Sulay, Lucia Danielle
+| - Tulio, Eimer Justin
 |
-| Happy hacking! - eric, ros, gab
-
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 .include beta.uasm                              | include the standard predefined macros
@@ -78,7 +74,7 @@ done:           HALT()
 
 . = 0x19C
 
-| INPUT marks the beginning of the memory block containing the hardcoded
+| ARRAY marks the beginning of the memory block containing the hardcoded
 | user "input".
 
 ARRAY:
@@ -91,6 +87,3 @@ ARRAY:
         LONG(9)
         LONG(3)             | <-- last element of the array
 
-| OUTPUT marks the memory block where the output will appear.
-| Nothing follows the label because the output will be written by the program.
-OUTPUT:

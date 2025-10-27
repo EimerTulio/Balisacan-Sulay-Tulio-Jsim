@@ -1,3 +1,14 @@
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+| This file takes a number n as input and computes the first n terms of the
+| fibonacci sequence.
+|
+| Lab 7 #3
+| - Balisacan, Lucas Matthew
+| - Sulay, Lucia Danielle
+| - Tulio, Eimer Justin
+|
+|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
 .include beta.uasm          | include the standard predefined macros
 
         LD(r31, INPUT, r1)       | r1 = N (number of terms) and acts as the counter for the loop
@@ -12,12 +23,11 @@
         SUBC(r1, 1, r1)          | 
         BEQ(r1, DONE, r31)       | i.e. if N == 1 --> store 0 into OUTPUT, then HALT(), else continue to next part
 
-LOOP:   ADDC(r2, 4, r2)          | increments the pointer of OUTPUT, making it point to the next index for the next Fib number
+LOOP:   SUBC(r1, 1, r1)          | decrements the counter by 1
+        ADDC(r2, 4, r2)          | increments the pointer of OUTPUT, making it point to the next index for the next Fib number
         ST(r4, OUTPUT, r2)       | store r4 (which currently holds the new Fib number) at the current address of OUTPUT (r2)
 
         BEQ(r1, DONE, r31)       | if counter reaches zero --> end the program, else continue with calculating for the next Fib number 
-
-        SUBC(r1, 1, r1)          | decrements the counter by 1
 
         ADD(r3, r4, r5)          | adds F0 (r3) with F1 (r4) to create the next Fib number in the sequence (r5)
         ADDC(r4, 0, r3)          | replaces F0 (r3) with F1 (r4)
@@ -39,7 +49,7 @@ DONE:   HALT()
 
 | INPUT marks the beginning of the memory block containing the hardcoded
 | user "input".
-INPUT: LONG(5)   
+INPUT: LONG(7)   
 
 | OUTPUT marks the memory block where the output will appear.
 | Nothing follows the label because the output will be written by the program.
