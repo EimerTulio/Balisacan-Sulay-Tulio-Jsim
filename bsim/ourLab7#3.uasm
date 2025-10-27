@@ -30,7 +30,8 @@ LOOP:   BNE(r0, SKIP)           | checks if key counter has reached end
                                 | if it has, doesn't skip code that resets the counter
         LD(r31, KEY, r0)        | set/initialize key counter to initial value
         ADDC(r31, 0, r1)        | turn r1 back to 0
-SKIP:   ADDC(r1, 4, r1)         | r1 = r1 + 4 (note: r1 is initially 0)
+SKIP:   BEQ(r2, DONE)           | (B)ranch to DONE if r2 is (EQ)ual to 0
+        ADDC(r1, 4, r1)         | r1 = r1 + 4 (note: r1 is initially 0)
         LD(r1, KEY, r4)         | r4 = memory[r1 + KEY] (load next array value to r4)
 
                                 | section that iterates through the plaintext array
@@ -45,9 +46,9 @@ SKIP:   ADDC(r1, 4, r1)         | r1 = r1 + 4 (note: r1 is initially 0)
                                 | code that handles loop termination/continuation
         SUBC(r0, 1, r0)         | r0 = r0 - 1 (decrement the key counter)
         SUBC(r2, 1, r2)         | r1 = r1 - 1 (decrement the plaintext counter)
-        BNE(r2, LOOP)           | (B)ranch back to LOOP if r2 is (N)ot (E)qual to 0
+        BR(LOOP)                | loop back
 
-        HALT()                  | then, finish execution             
+DONE:   HALT()                  | then, finish execution             
 
 |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
